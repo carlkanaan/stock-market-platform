@@ -6,6 +6,7 @@ import { CmsUsersService } from '../cms-users/cms-users.service';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
+// CMS authentication and JWT token generation
 export class AuthService {
   constructor(
     private readonly cmsUsersService: CmsUsersService,
