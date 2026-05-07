@@ -10,6 +10,7 @@ import { CreateStockDto } from './dto/create-stock.dto';
 import { Stock, StockDocument } from './schemas/stock.schema';
 
 @Injectable()
+// Creates a stock listing and prevents duplicate tickers
 export class StocksService {
   constructor(
     @InjectModel(Stock.name)
