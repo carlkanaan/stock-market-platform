@@ -11,6 +11,8 @@ import { WithdrawDto } from './dto/withdraw.dto';
 import { Wallet, WalletDocument } from './schemas/wallet.schema';
 
 @Injectable()
+
+// Adds funds to a member wallet
 export class WalletService {
   constructor(
     @InjectModel(Wallet.name)
