@@ -15,6 +15,7 @@ import { SellStockDto } from './dto/sell-stock.dto';
 import { Portfolio, PortfolioDocument } from './schemas/portfolio.schema';
 
 @Injectable()
+// Processes stock purchases and updates portfolio positions
 export class PortfolioService {
   constructor(
     @InjectModel(Portfolio.name)
