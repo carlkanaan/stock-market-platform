@@ -19,6 +19,8 @@ import { MemberLoginDto } from './dto/member-login.dto';
 import { UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
+
+// Registers a member and creates a temporary OTP for email verification
 export class MembersService {
   constructor(
     @InjectModel(Member.name)
