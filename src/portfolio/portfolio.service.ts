@@ -14,6 +14,9 @@ import { SellStockDto } from './dto/sell-stock.dto';
 
 import { Portfolio, PortfolioDocument } from './schemas/portfolio.schema';
 
+import { OrdersService } from '../orders/orders.service';
+import { OrderType } from '../orders/schemas/order.schema';
+
 @Injectable()
 // Processes stock purchases and updates portfolio positions
 export class PortfolioService {
@@ -23,6 +26,7 @@ export class PortfolioService {
 
     private readonly walletService: WalletService,
     private readonly stocksService: StocksService,
+    private readonly ordersService: OrdersService,
   ) {}
 
   async buyStock(buyStockDto: BuyStockDto) {
@@ -70,6 +74,14 @@ export class PortfolioService {
       await portfolioPosition.save();
     }
 
+    await this.ordersService.createOrder({
+      memberId: buyStockDto.memberId,
+      stockId: buyStockDto.stockId,
+      type: OrderType.BUY,
+      quantity: buyStockDto.quantity,
+      price: stock.currentPrice,
+    });
+
     return {
       success: true,
       message: 'Stock purchased successfully',
@@ -115,6 +127,14 @@ export class PortfolioService {
     } else {
       await portfolioPosition.save();
     }
+
+    await this.ordersService.createOrder({
+      memberId: sellStockDto.memberId,
+      stockId: sellStockDto.stockId,
+      type: OrderType.SELL,
+      quantity: sellStockDto.quantity,
+      price: stock.currentPrice,
+    });
 
     return {
       success: true,
