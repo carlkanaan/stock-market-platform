@@ -10,6 +10,12 @@ import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { Wallet, WalletDocument } from './schemas/wallet.schema';
 
+import {
+  WithdrawalRequest,
+  WithdrawalRequestDocument,
+  WithdrawalStatus,
+} from './schemas/withdrawal-request.schema';
+
 @Injectable()
 
 // Adds funds to a member wallet
@@ -17,6 +23,9 @@ export class WalletService {
   constructor(
     @InjectModel(Wallet.name)
     private readonly walletModel: Model<WalletDocument>,
+
+    @InjectModel(WithdrawalRequest.name)
+    private readonly withdrawalRequestModel: Model<WithdrawalRequestDocument>,
   ) {}
 
   async deposit(depositDto: DepositDto) {
@@ -64,16 +73,93 @@ export class WalletService {
       }
     }
 
-    wallet.balance -= withdrawDto.amount;
-    await wallet.save();
+    const request = await this.withdrawalRequestModel.create({
+      memberId: new Types.ObjectId(withdrawDto.memberId),
+      amount: withdrawDto.amount,
+      status: WithdrawalStatus.PENDING,
+    });
 
     return {
       success: true,
-      message: 'Withdrawal processed successfully',
+      message: 'Withdrawal request submitted for review',
+      data: request,
+    };
+  }
+  async approveWithdrawal(requestId: string) {
+    const request = await this.withdrawalRequestModel.findById(requestId);
+
+    if (!request) {
+      throw new NotFoundException('Withdrawal request not found');
+    }
+
+    if (request.status !== WithdrawalStatus.PENDING) {
+      throw new BadRequestException('Withdrawal request was already reviewed');
+    }
+
+    const wallet = await this.walletModel.findOne({
+      memberId: request.memberId,
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
+    if (wallet.balance < request.amount) {
+      throw new BadRequestException('Insufficient wallet balance');
+    }
+
+    wallet.balance -= request.amount;
+    await wallet.save();
+
+    request.status = WithdrawalStatus.APPROVED;
+    request.reviewedAt = new Date();
+    await request.save();
+
+    return {
+      success: true,
+      message: 'Withdrawal request approved',
       data: {
-        memberId: wallet.memberId,
-        balance: wallet.balance,
+        requestId: request._id,
+        memberId: request.memberId,
+        amount: request.amount,
+        status: request.status,
+        walletBalance: wallet.balance,
       },
+    };
+  }
+
+  async rejectWithdrawal(requestId: string, reason: string) {
+    const request = await this.withdrawalRequestModel.findById(requestId);
+
+    if (!request) {
+      throw new NotFoundException('Withdrawal request not found');
+    }
+
+    if (request.status !== WithdrawalStatus.PENDING) {
+      throw new BadRequestException('Withdrawal request was already reviewed');
+    }
+
+    request.status = WithdrawalStatus.REJECTED;
+    request.rejectionReason = reason;
+    request.reviewedAt = new Date();
+    await request.save();
+
+    return {
+      success: true,
+      message: 'Withdrawal request rejected',
+      data: request,
+    };
+  }
+
+  async getPendingWithdrawals() {
+    const requests = await this.withdrawalRequestModel
+      .find({ status: WithdrawalStatus.PENDING })
+      .populate('memberId', 'fullName email')
+      .sort({ createdAt: -1 });
+
+    return {
+      success: true,
+      data: requests,
     };
   }
 

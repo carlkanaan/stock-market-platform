@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
@@ -16,6 +16,21 @@ export class WalletController {
   @Post('withdraw')
   withdraw(@Body() withdrawDto: WithdrawDto) {
     return this.walletService.withdraw(withdrawDto);
+  }
+
+  @Get('withdrawals/pending')
+  getPendingWithdrawals() {
+    return this.walletService.getPendingWithdrawals();
+  }
+
+  @Patch('withdrawals/:id/approve')
+  approveWithdrawal(@Param('id') id: string) {
+    return this.walletService.approveWithdrawal(id);
+  }
+
+  @Patch('withdrawals/:id/reject')
+  rejectWithdrawal(@Param('id') id: string, @Body('reason') reason: string) {
+    return this.walletService.rejectWithdrawal(id, reason);
   }
 
   @Get(':memberId')
