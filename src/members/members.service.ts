@@ -2,9 +2,14 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { Model } from 'mongoose';
 
 import { RegisterMemberDto } from './dto/register-member.dto';
@@ -16,7 +21,6 @@ import { JwtService } from '@nestjs/jwt';
 
 import { SetPasswordDto } from './dto/set-password.dto';
 import { MemberLoginDto } from './dto/member-login.dto';
-import { UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 
@@ -27,6 +31,7 @@ export class MembersService {
     private readonly memberModel: Model<MemberDocument>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
   async register(registerMemberDto: RegisterMemberDto) {
     const age = this.calculateAge(new Date(registerMemberDto.dateOfBirth));
@@ -176,6 +181,125 @@ export class MembersService {
           fullName: member.fullName,
           email: member.email,
         },
+      },
+    };
+  }
+  async approveIdentity(memberId: string, adminId?: string) {
+    const member = await this.memberModel.findById(memberId);
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    member.isIdentityVerified = true;
+    await member.save();
+
+    await this.auditLogsService.createLog({
+      action: 'APPROVE_IDENTITY_VERIFICATION',
+      performedBy: adminId,
+      memberId,
+      reason: 'Identity verification approved',
+    });
+
+    return {
+      success: true,
+      message: 'Member identity approved successfully',
+      data: {
+        id: member._id,
+        fullName: member.fullName,
+        email: member.email,
+        isIdentityVerified: member.isIdentityVerified,
+      },
+    };
+  }
+
+  async rejectIdentity(memberId: string, reason: string, adminId?: string) {
+    const member = await this.memberModel.findById(memberId);
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    member.isIdentityVerified = false;
+    await member.save();
+
+    await this.auditLogsService.createLog({
+      action: 'REJECT_IDENTITY_VERIFICATION',
+      performedBy: adminId,
+      memberId,
+      reason,
+    });
+
+    return {
+      success: true,
+      message: 'Member identity rejected',
+      data: {
+        id: member._id,
+        fullName: member.fullName,
+        email: member.email,
+        isIdentityVerified: member.isIdentityVerified,
+        reason,
+      },
+    };
+  }
+
+  async suspendMember(memberId: string, reason: string, adminId?: string) {
+    const member = await this.memberModel.findById(memberId);
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    member.isActive = false;
+    member.suspensionReason = reason;
+    await member.save();
+
+    await this.auditLogsService.createLog({
+      action: 'SUSPEND_MEMBER',
+      performedBy: adminId,
+      memberId,
+      reason,
+    });
+
+    return {
+      success: true,
+      message: 'Member suspended successfully',
+      data: {
+        id: member._id,
+        fullName: member.fullName,
+        email: member.email,
+        isActive: member.isActive,
+        suspensionReason: member.suspensionReason,
+      },
+    };
+  }
+
+  async reinstateMember(memberId: string, adminId?: string) {
+    const member = await this.memberModel.findById(memberId);
+
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
+
+    member.isActive = true;
+    member.suspensionReason = undefined;
+    await member.save();
+
+    await this.auditLogsService.createLog({
+      action: 'REINSTATE_MEMBER',
+      performedBy: adminId,
+      memberId,
+      reason: 'Member account reinstated',
+    });
+
+    return {
+      success: true,
+      message: 'Member reinstated successfully',
+      data: {
+        id: member._id,
+        fullName: member.fullName,
+        email: member.email,
+        isActive: member.isActive,
       },
     };
   }

@@ -1,10 +1,10 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
 
-import { RegisterMemberDto } from './dto/register-member.dto';
-import { MembersService } from './members.service';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { SetPasswordDto } from './dto/set-password.dto';
 import { MemberLoginDto } from './dto/member-login.dto';
+import { RegisterMemberDto } from './dto/register-member.dto';
+import { SetPasswordDto } from './dto/set-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { MembersService } from './members.service';
 
 @Controller('members')
 export class MembersController {
@@ -28,5 +28,25 @@ export class MembersController {
   @Post('login')
   login(@Body() memberLoginDto: MemberLoginDto) {
     return this.membersService.login(memberLoginDto);
+  }
+
+  @Patch(':id/approve-identity')
+  approveIdentity(@Param('id') id: string) {
+    return this.membersService.approveIdentity(id);
+  }
+
+  @Patch(':id/reject-identity')
+  rejectIdentity(@Param('id') id: string, @Body('reason') reason: string) {
+    return this.membersService.rejectIdentity(id, reason);
+  }
+
+  @Patch(':id/suspend')
+  suspendMember(@Param('id') id: string, @Body('reason') reason: string) {
+    return this.membersService.suspendMember(id, reason);
+  }
+
+  @Patch(':id/reinstate')
+  reinstateMember(@Param('id') id: string) {
+    return this.membersService.reinstateMember(id);
   }
 }
