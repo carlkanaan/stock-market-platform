@@ -28,4 +28,17 @@ export class AuditLogsService {
       amount: data.amount,
     });
   }
+
+  async findAll() {
+    const logs = await this.auditLogModel
+      .find()
+      .populate('performedBy', 'fullName email role')
+      .populate('memberId', 'fullName email')
+      .sort({ createdAt: -1 });
+
+    return {
+      success: true,
+      data: logs,
+    };
+  }
 }
