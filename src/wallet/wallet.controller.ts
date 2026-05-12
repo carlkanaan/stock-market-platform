@@ -37,4 +37,9 @@ export class WalletController {
   getWallet(@Param('memberId') memberId: string) {
     return this.walletService.getWallet(memberId);
   }
+
+  @Get('transactions/:memberId')
+  getWalletTransactions(@Param('memberId') memberId: string) {
+    return this.walletService.getWalletTransactions(memberId);
+  }
 }
