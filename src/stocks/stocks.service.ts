@@ -4,10 +4,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { CreateStockDto } from './dto/create-stock.dto';
 import { Stock, StockDocument } from './schemas/stock.schema';
+import { UpdateStockDto } from './dto/update-stock.dto';
+import {
+  PriceHistory,
+  PriceHistoryDocument,
+} from './schemas/price-history.schema';
 
 @Injectable()
 // Creates a stock listing and prevents duplicate tickers
@@ -15,6 +20,9 @@ export class StocksService {
   constructor(
     @InjectModel(Stock.name)
     private readonly stockModel: Model<StockDocument>,
+
+    @InjectModel(PriceHistory.name)
+    private readonly priceHistoryModel: Model<PriceHistoryDocument>,
   ) {}
 
   async create(createStockDto: CreateStockDto) {
@@ -55,5 +63,63 @@ export class StocksService {
     }
 
     return stock;
+  }
+
+  async update(id: string, updateStockDto: UpdateStockDto) {
+    const stock = await this.stockModel.findById(id);
+
+    if (!stock) {
+      throw new NotFoundException('Stock not found');
+    }
+
+    const priceChanged =
+      updateStockDto.currentPrice !== undefined &&
+      updateStockDto.currentPrice !== stock.currentPrice;
+
+    Object.assign(stock, updateStockDto);
+
+    await stock.save();
+
+    if (priceChanged) {
+      await this.priceHistoryModel.create({
+        stockId: new Types.ObjectId(id),
+        price: stock.currentPrice,
+        recordedAt: new Date(),
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Stock updated successfully',
+      data: stock,
+    };
+  }
+
+  async delist(id: string) {
+    const stock = await this.stockModel.findById(id);
+
+    if (!stock) {
+      throw new NotFoundException('Stock not found');
+    }
+
+    stock.isListed = false;
+    await stock.save();
+
+    return {
+      success: true,
+      message: 'Stock delisted successfully',
+      data: stock,
+    };
+  }
+
+  async getPriceHistory(id: string) {
+    const history = await this.priceHistoryModel
+      .find({ stockId: new Types.ObjectId(id) })
+      .sort({ recordedAt: 1 });
+
+    return {
+      success: true,
+      data: history,
+    };
   }
 }
