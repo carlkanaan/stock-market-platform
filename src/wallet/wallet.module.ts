@@ -9,6 +9,11 @@ import {
   WithdrawalRequestSchema,
 } from './schemas/withdrawal-request.schema';
 
+import {
+  WalletTransaction,
+  WalletTransactionSchema,
+} from './schemas/wallet-transaction.schema';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -16,6 +21,10 @@ import {
       {
         name: WithdrawalRequest.name,
         schema: WithdrawalRequestSchema,
+      },
+      {
+        name: WalletTransaction.name,
+        schema: WalletTransactionSchema,
       },
     ]),
   ],

@@ -16,6 +16,12 @@ import {
   WithdrawalStatus,
 } from './schemas/withdrawal-request.schema';
 
+import {
+  WalletTransaction,
+  WalletTransactionDocument,
+  WalletTransactionType,
+} from './schemas/wallet-transaction.schema';
+
 @Injectable()
 
 // Adds funds to a member wallet
@@ -26,6 +32,9 @@ export class WalletService {
 
     @InjectModel(WithdrawalRequest.name)
     private readonly withdrawalRequestModel: Model<WithdrawalRequestDocument>,
+
+    @InjectModel(WalletTransaction.name)
+    private readonly walletTransactionModel: Model<WalletTransactionDocument>,
   ) {}
 
   async deposit(depositDto: DepositDto) {
@@ -37,6 +46,14 @@ export class WalletService {
       },
       { new: true, upsert: true },
     );
+
+    await this.walletTransactionModel.create({
+      memberId: new Types.ObjectId(depositDto.memberId),
+      type: WalletTransactionType.DEPOSIT,
+      amount: depositDto.amount,
+      status: 'COMPLETED',
+      transactionDate: new Date(),
+    });
 
     return {
       success: true,
@@ -111,6 +128,14 @@ export class WalletService {
     wallet.balance -= request.amount;
     await wallet.save();
 
+    await this.walletTransactionModel.create({
+      memberId: request.memberId,
+      type: WalletTransactionType.WITHDRAWAL,
+      amount: request.amount,
+      status: 'COMPLETED',
+      transactionDate: new Date(),
+    });
+
     request.status = WithdrawalStatus.APPROVED;
     request.reviewedAt = new Date();
     await request.save();
@@ -175,6 +200,17 @@ export class WalletService {
     return {
       success: true,
       data: wallet,
+    };
+  }
+  // Display deposit and withdrawal transactions for member wallet
+  async getWalletTransactions(memberId: string) {
+    const transactions = await this.walletTransactionModel
+      .find({ memberId: new Types.ObjectId(memberId) })
+      .sort({ transactionDate: -1 });
+
+    return {
+      success: true,
+      data: transactions,
     };
   }
 }
