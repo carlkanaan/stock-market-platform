@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-
 import { Order, OrderDocument } from '../orders/schemas/order.schema';
 import { Wallet, WalletDocument } from '../wallet/schemas/wallet.schema';
 import {
@@ -9,6 +8,12 @@ import {
   PortfolioDocument,
 } from '../portfolio/schemas/portfolio.schema';
 import { Types } from 'mongoose';
+import { Member, MemberDocument } from '../members/schemas/member.schema';
+import {
+  WithdrawalRequest,
+  WithdrawalRequestDocument,
+  WithdrawalStatus,
+} from '../wallet/schemas/withdrawal-request.schema';
 
 @Injectable()
 export class AnalyticsService {
@@ -21,6 +26,12 @@ export class AnalyticsService {
 
     @InjectModel(Portfolio.name)
     private readonly portfolioModel: Model<PortfolioDocument>,
+
+    @InjectModel(Member.name)
+    private readonly memberModel: Model<MemberDocument>,
+
+    @InjectModel(WithdrawalRequest.name)
+    private readonly withdrawalRequestModel: Model<WithdrawalRequestDocument>,
   ) {}
 
   async getTradingVolume(
@@ -160,7 +171,7 @@ export class AnalyticsService {
       data: result,
     };
   }
-
+  //under management assets
   async getAssetsUnderManagement() {
     const wallets = await this.walletModel.aggregate([
       {
@@ -253,6 +264,73 @@ export class AnalyticsService {
     return {
       success: true,
       data: allocation,
+    };
+  }
+
+  // Total registered members and monthly growth analytics
+  async getMemberGrowthAnalytics() {
+    const totalMembers = await this.memberModel.countDocuments();
+
+    const now = new Date();
+
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const previousMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1,
+    );
+
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const currentMonthMembers = await this.memberModel.countDocuments({
+      createdAt: {
+        $gte: currentMonthStart,
+      },
+    });
+
+    const previousMonthMembers = await this.memberModel.countDocuments({
+      createdAt: {
+        $gte: previousMonthStart,
+        $lte: previousMonthEnd,
+      },
+    });
+
+    const growthRate =
+      previousMonthMembers === 0
+        ? 100
+        : Number(
+            (
+              ((currentMonthMembers - previousMonthMembers) /
+                previousMonthMembers) *
+              100
+            ).toFixed(2),
+          );
+
+    return {
+      success: true,
+      data: {
+        totalMembers,
+        currentMonthMembers,
+        previousMonthMembers,
+        growthRate,
+      },
+    };
+  }
+
+  // Total pending withdrawal requests
+  async getPendingWithdrawalMetrics() {
+    const pendingWithdrawals = await this.withdrawalRequestModel.countDocuments(
+      {
+        status: WithdrawalStatus.PENDING,
+      },
+    );
+
+    return {
+      success: true,
+      data: {
+        pendingWithdrawals,
+      },
     };
   }
 }

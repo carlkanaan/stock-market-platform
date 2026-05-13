@@ -15,6 +15,7 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getTradingVolume(stockId, groupBy, from, to);
   }
+
   @Get('top-stocks')
   getTopTradedStocks() {
     return this.analyticsService.getTopTradedStocks();
@@ -33,5 +34,15 @@ export class AnalyticsController {
   @Get('sector-allocation')
   getSectorAllocation() {
     return this.analyticsService.getSectorAllocation();
+  }
+
+  @Get('member-growth')
+  getMemberGrowthAnalytics() {
+    return this.analyticsService.getMemberGrowthAnalytics();
+  }
+
+  @Get('pending-withdrawals')
+  getPendingWithdrawalMetrics() {
+    return this.analyticsService.getPendingWithdrawalMetrics();
   }
 }
