@@ -51,6 +51,10 @@ export class PortfolioService {
       memberId: new Types.ObjectId(buyStockDto.memberId),
       stockId: new Types.ObjectId(buyStockDto.stockId),
     });
+    //prevent member from buying delisted stock
+    if (!stock.isListed) {
+      throw new BadRequestException('This stock is not available');
+    }
 
     if (!portfolioPosition) {
       portfolioPosition = await this.portfolioModel.create({

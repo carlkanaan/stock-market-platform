@@ -8,6 +8,7 @@ import {
   Portfolio,
   PortfolioDocument,
 } from '../portfolio/schemas/portfolio.schema';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class AnalyticsService {
@@ -22,38 +23,93 @@ export class AnalyticsService {
     private readonly portfolioModel: Model<PortfolioDocument>,
   ) {}
 
-  async getTradingVolume() {
+  async getTradingVolume(
+    stockId: string,
+    groupBy: 'day' | 'month',
+    from: string,
+    to: string,
+  ) {
+    const dateFormat = groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
+
     const result = await this.orderModel.aggregate([
       {
+        $match: {
+          stockId: new Types.ObjectId(stockId),
+          executedAt: {
+            $gte: new Date(from),
+            $lte: new Date(to),
+          },
+        },
+      },
+      {
         $group: {
-          _id: null,
-          totalTradingVolume: {
+          _id: {
+            $dateToString: {
+              format: dateFormat,
+              date: '$executedAt',
+            },
+          },
+          sharesTraded: {
+            $sum: '$quantity',
+          },
+          totalValue: {
             $sum: '$totalValue',
           },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          sharesTraded: 1,
+          totalValue: 1,
+        },
+      },
+      {
+        $sort: {
+          date: 1,
         },
       },
     ]);
 
     return {
       success: true,
-      data: result[0] || {
-        totalTradingVolume: 0,
-      },
+      data: result,
     };
   }
-
+  //Top 5 Traded Stocks
   async getTopTradedStocks() {
     const result = await this.orderModel.aggregate([
       {
         $group: {
           _id: '$stockId',
-          totalTrades: { $sum: 1 },
+          tradeCount: { $sum: 1 },
           totalVolume: { $sum: '$quantity' },
         },
       },
       {
+        $lookup: {
+          from: 'stocks',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'stock',
+        },
+      },
+      {
+        $unwind: '$stock',
+      },
+      {
+        $project: {
+          _id: 0,
+          stockId: '$_id',
+          companyName: '$stock.companyName',
+          tradeCount: 1,
+          totalVolume: 1,
+        },
+      },
+      {
         $sort: {
-          totalVolume: -1,
+          tradeCount: -1,
         },
       },
       {
@@ -66,9 +122,20 @@ export class AnalyticsService {
       data: result,
     };
   }
-
+  //most active members in the past 30 days
   async getMostActiveMembers() {
+    const thirtyDaysAgo = new Date();
+
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     const result = await this.orderModel.aggregate([
+      {
+        $match: {
+          executedAt: {
+            $gte: thirtyDaysAgo,
+          },
+        },
+      },
       {
         $group: {
           _id: '$memberId',
@@ -108,11 +175,22 @@ export class AnalyticsService {
 
     const portfolios = await this.portfolioModel.aggregate([
       {
+        $lookup: {
+          from: 'stocks',
+          localField: 'stockId',
+          foreignField: '_id',
+          as: 'stock',
+        },
+      },
+      {
+        $unwind: '$stock',
+      },
+      {
         $group: {
           _id: null,
           totalPortfolioValue: {
             $sum: {
-              $multiply: ['$quantity', '$averagePurchasePrice'],
+              $multiply: ['$quantity', '$stock.currentPrice'],
             },
           },
         },
@@ -130,6 +208,51 @@ export class AnalyticsService {
         totalPortfolioValue,
         totalAUM: totalWalletBalances + totalPortfolioValue,
       },
+    };
+  }
+
+  async getSectorAllocation() {
+    const sectors = await this.portfolioModel.aggregate([
+      {
+        $lookup: {
+          from: 'stocks',
+          localField: 'stockId',
+          foreignField: '_id',
+          as: 'stock',
+        },
+      },
+      {
+        $unwind: '$stock',
+      },
+      {
+        $group: {
+          _id: '$stock.sector',
+          sectorValue: {
+            $sum: {
+              $multiply: ['$quantity', '$stock.currentPrice'],
+            },
+          },
+        },
+      },
+    ]);
+
+    const totalValue = sectors.reduce(
+      (sum, sector) => sum + sector.sectorValue,
+      0,
+    );
+
+    const allocation = sectors.map((sector) => ({
+      sector: sector._id,
+      value: sector.sectorValue,
+      percentage:
+        totalValue === 0
+          ? 0
+          : Number(((sector.sectorValue / totalValue) * 100).toFixed(2)),
+    }));
+
+    return {
+      success: true,
+      data: allocation,
     };
   }
 }
