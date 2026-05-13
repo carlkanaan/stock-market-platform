@@ -17,11 +17,19 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { PriceAlertsModule } from './price-alerts/price-alerts.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SystemAlertsModule } from './system-alerts/system-alerts.module';
+import * as Joi from 'joi';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validationSchema: Joi.object({
+        PORT: Joi.number().default(3000),
+        MONGO_URI: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
+        JWT_EXPIRES_IN: Joi.string().default('1d'),
+        OTP_TTL_MINUTES: Joi.number().default(10),
+      }),
     }),
 
     MongooseModule.forRootAsync({
