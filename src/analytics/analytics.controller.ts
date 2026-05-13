@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 
 import { AnalyticsService } from './analytics.service';
 
@@ -7,10 +7,14 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('trading-volume')
-  getTradingVolume() {
-    return this.analyticsService.getTradingVolume();
+  getTradingVolume(
+    @Query('stockId') stockId: string,
+    @Query('groupBy') groupBy: 'day' | 'month',
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.analyticsService.getTradingVolume(stockId, groupBy, from, to);
   }
-
   @Get('top-stocks')
   getTopTradedStocks() {
     return this.analyticsService.getTopTradedStocks();
@@ -24,5 +28,10 @@ export class AnalyticsController {
   @Get('aum')
   getAssetsUnderManagement() {
     return this.analyticsService.getAssetsUnderManagement();
+  }
+
+  @Get('sector-allocation')
+  getSectorAllocation() {
+    return this.analyticsService.getSectorAllocation();
   }
 }
