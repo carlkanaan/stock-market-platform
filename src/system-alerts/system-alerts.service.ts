@@ -10,6 +10,11 @@ import {
 
 import { Wallet, WalletDocument } from '../wallet/schemas/wallet.schema';
 
+type PopulatedMember = {
+  _id: string;
+  fullName: string;
+};
+
 @Injectable()
 export class SystemAlertsService {
   constructor(
@@ -19,7 +24,8 @@ export class SystemAlertsService {
     @InjectModel(Wallet.name)
     private readonly walletModel: Model<WalletDocument>,
   ) {}
-  //scheduled cron-job to check negative balances at midnight everyday
+
+  // Scheduled cron job to check negative balances every day at midnight
   @Cron('0 0 * * *')
   async checkNegativeWalletBalances() {
     const negativeWallets = await this.walletModel
@@ -33,9 +39,11 @@ export class SystemAlertsService {
     });
 
     for (const wallet of negativeWallets) {
+      const member = wallet.memberId as unknown as PopulatedMember;
+
       await this.systemAlertModel.create({
         type: 'NEGATIVE_WALLET',
-        message: `Negative wallet balance detected for ${(wallet.memberId as any).fullName} with id number (${(wallet.memberId as any)._id})`,
+        message: `Negative wallet balance detected for ${member.fullName} with id number (${member._id})`,
         isActive: true,
       });
     }
@@ -51,8 +59,4 @@ export class SystemAlertsService {
       data: alerts,
     };
   }
-  //This function is added to display response directly on Postman in order not to wait till midnight
-  /**async onModuleInit() {       
-    await this.checkNegativeWalletBalances();
-  }**/
 }
