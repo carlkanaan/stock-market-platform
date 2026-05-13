@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { StocksService } from './stocks.service';
 import { StocksController } from './stocks.controller';
 import { Stock, StockSchema } from './schemas/stock.schema';
+import { JwtConfigModule } from '../common/jwt/jwt-config.module';
 import {
   PriceHistory,
   PriceHistorySchema,
@@ -10,6 +11,7 @@ import {
 
 @Module({
   imports: [
+    JwtConfigModule,
     MongooseModule.forFeature([
       { name: Stock.name, schema: StockSchema },
       { name: PriceHistory.name, schema: PriceHistorySchema },

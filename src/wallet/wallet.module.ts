@@ -15,9 +15,11 @@ import {
 } from './schemas/wallet-transaction.schema';
 
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
+import { JwtConfigModule } from '../common/jwt/jwt-config.module';
 
 @Module({
   imports: [
+    JwtConfigModule,
     MongooseModule.forFeature([
       { name: Wallet.name, schema: WalletSchema },
       {
