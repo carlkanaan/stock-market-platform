@@ -15,6 +15,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { PriceAlertsModule } from './price-alerts/price-alerts.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SystemAlertsModule } from './system-alerts/system-alerts.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { PriceAlertsModule } from './price-alerts/price-alerts.module';
     AnalyticsModule,
     AuditLogsModule,
     PriceAlertsModule,
+    ScheduleModule.forRoot(),
+    SystemAlertsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
