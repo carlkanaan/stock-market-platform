@@ -15,6 +15,7 @@ import { Model } from 'mongoose';
 import { RegisterMemberDto } from './dto/register-member.dto';
 import { Member, MemberDocument } from './schemas/member.schema';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { EmailService } from '../notifications/email.service';
 import * as bcrypt from 'bcrypt';
 
 import { JwtService } from '@nestjs/jwt';
@@ -32,6 +33,7 @@ export class MembersService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly auditLogsService: AuditLogsService,
+    private readonly emailService: EmailService,
   ) {}
   async register(registerMemberDto: RegisterMemberDto) {
     const age = this.calculateAge(new Date(registerMemberDto.dateOfBirth));
@@ -66,6 +68,8 @@ export class MembersService {
       otpExpiresAt,
     });
 
+    await this.emailService.sendOtpEmail(member.email, otpCode);
+
     return {
       success: true,
       message: 'Member registered successfully. OTP sent to email.',
@@ -75,7 +79,6 @@ export class MembersService {
         email: member.email,
         dateOfBirth: member.dateOfBirth,
         isEmailVerified: member.isEmailVerified,
-        otpPreviewForTesting: otpCode,
       },
     };
   }
