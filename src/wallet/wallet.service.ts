@@ -22,9 +22,14 @@ import {
   WalletTransactionType,
 } from './schemas/wallet-transaction.schema';
 
-@Injectable()
+import {
+  AdjustmentType,
+  ManualWalletAdjustmentDto,
+} from './dto/manual-wallet-adjustment.dto';
 
-// Adds funds to a member wallet
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+
+@Injectable()
 export class WalletService {
   constructor(
     @InjectModel(Wallet.name)
@@ -35,8 +40,10 @@ export class WalletService {
 
     @InjectModel(WalletTransaction.name)
     private readonly walletTransactionModel: Model<WalletTransactionDocument>,
-  ) {}
 
+    private readonly auditLogsService: AuditLogsService,
+  ) {}
+  //deposit money in member wallet
   async deposit(depositDto: DepositDto) {
     const wallet = await this.walletModel.findOneAndUpdate(
       { memberId: new Types.ObjectId(depositDto.memberId) },
@@ -65,7 +72,7 @@ export class WalletService {
       },
     };
   }
-
+  //perform withdrawal
   async withdraw(withdrawDto: WithdrawDto) {
     const wallet = await this.walletModel.findOne({
       memberId: new Types.ObjectId(withdrawDto.memberId),
@@ -102,6 +109,7 @@ export class WalletService {
       data: request,
     };
   }
+  //approve withdrawals
   async approveWithdrawal(requestId: string) {
     const request = await this.withdrawalRequestModel.findById(requestId);
 
@@ -152,7 +160,7 @@ export class WalletService {
       },
     };
   }
-
+  //reject withdrawal
   async rejectWithdrawal(requestId: string, reason: string) {
     const request = await this.withdrawalRequestModel.findById(requestId);
 
@@ -175,7 +183,7 @@ export class WalletService {
       data: request,
     };
   }
-
+  //display pending withdrawals
   async getPendingWithdrawals() {
     const requests = await this.withdrawalRequestModel
       .find({ status: WithdrawalStatus.PENDING })
@@ -187,7 +195,7 @@ export class WalletService {
       data: requests,
     };
   }
-
+  //display wallet
   async getWallet(memberId: string) {
     const wallet = await this.walletModel.findOne({
       memberId: new Types.ObjectId(memberId),
@@ -211,6 +219,47 @@ export class WalletService {
     return {
       success: true,
       data: transactions,
+    };
+  }
+  //admin manual credit/debit adjustments
+  async manualAdjustment(dto: ManualWalletAdjustmentDto) {
+    const wallet = await this.walletModel.findOne({
+      memberId: new Types.ObjectId(dto.memberId),
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
+    if (dto.type === AdjustmentType.DEBIT && wallet.balance < dto.amount) {
+      throw new BadRequestException('Insufficient wallet balance');
+    }
+
+    if (dto.type === AdjustmentType.CREDIT) {
+      wallet.balance += dto.amount;
+    } else {
+      wallet.balance -= dto.amount;
+    }
+
+    await wallet.save();
+
+    await this.auditLogsService.createLog({
+      action: `MANUAL_WALLET_${dto.type}`,
+      memberId: dto.memberId,
+      amount: dto.amount,
+      reason: dto.reason,
+    });
+
+    return {
+      success: true,
+      message: 'Wallet adjusted successfully',
+      data: {
+        memberId: wallet.memberId,
+        adjustmentType: dto.type,
+        amount: dto.amount,
+        reason: dto.reason,
+        balance: wallet.balance,
+      },
     };
   }
 }

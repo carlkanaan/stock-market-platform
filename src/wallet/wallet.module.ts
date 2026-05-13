@@ -14,6 +14,8 @@ import {
   WalletTransactionSchema,
 } from './schemas/wallet-transaction.schema';
 
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -27,6 +29,7 @@ import {
         schema: WalletTransactionSchema,
       },
     ]),
+    AuditLogsModule,
   ],
   controllers: [WalletController],
   providers: [WalletService],
