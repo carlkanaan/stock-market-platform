@@ -12,6 +12,10 @@ import {
   PortfolioSchema,
 } from '../portfolio/schemas/portfolio.schema';
 import { Member, MemberSchema } from '../members/schemas/member.schema';
+import {
+  WithdrawalRequest,
+  WithdrawalRequestSchema,
+} from '../wallet/schemas/withdrawal-request.schema';
 
 @Module({
   imports: [
@@ -21,6 +25,7 @@ import { Member, MemberSchema } from '../members/schemas/member.schema';
       { name: Wallet.name, schema: WalletSchema },
       { name: Portfolio.name, schema: PortfolioSchema },
       { name: Member.name, schema: MemberSchema },
+      { name: WithdrawalRequest.name, schema: WithdrawalRequestSchema },
     ]),
   ],
   controllers: [AnalyticsController],
