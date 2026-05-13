@@ -3,6 +3,7 @@ import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { WalletService } from './wallet.service';
+import { ManualWalletAdjustmentDto } from './dto/manual-wallet-adjustment.dto';
 
 @Controller('wallet')
 export class WalletController {
@@ -31,6 +32,13 @@ export class WalletController {
   @Patch('withdrawals/:id/reject')
   rejectWithdrawal(@Param('id') id: string, @Body('reason') reason: string) {
     return this.walletService.rejectWithdrawal(id, reason);
+  }
+
+  @Post('manual-adjustment')
+  manualAdjustment(
+    @Body() manualWalletAdjustmentDto: ManualWalletAdjustmentDto,
+  ) {
+    return this.walletService.manualAdjustment(manualWalletAdjustmentDto);
   }
 
   @Get(':memberId')
