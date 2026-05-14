@@ -22,3 +22,4 @@ export class Wallet {
 
 export const WalletSchema = SchemaFactory.createForClass(Wallet);
 
+WalletSchema.index({ memberId: 1 }, { unique: true });

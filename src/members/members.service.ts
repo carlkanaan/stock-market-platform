@@ -8,7 +8,6 @@ import {
 
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { Model } from 'mongoose';
 

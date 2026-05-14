@@ -15,6 +15,19 @@ import {
   WithdrawalStatus,
 } from '../wallet/schemas/withdrawal-request.schema';
 
+type WalletAumResult = {
+  totalWalletBalances: number;
+};
+
+type PortfolioAumResult = {
+  totalPortfolioValue: number;
+};
+
+type SectorAllocationResult = {
+  _id: string;
+  sectorValue: number;
+};
+
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -197,7 +210,7 @@ export class AnalyticsService {
   }
   //under management assets
   async getAssetsUnderManagement() {
-    const wallets = await this.walletModel.aggregate([
+    const wallets = await this.walletModel.aggregate<WalletAumResult>([
       {
         $group: {
           _id: null,
@@ -208,7 +221,7 @@ export class AnalyticsService {
       },
     ]);
 
-    const portfolios = await this.portfolioModel.aggregate([
+    const portfolios = await this.portfolioModel.aggregate<PortfolioAumResult>([
       {
         $lookup: {
           from: 'stocks',
@@ -247,29 +260,31 @@ export class AnalyticsService {
   }
 
   async getSectorAllocation() {
-    const sectors = await this.portfolioModel.aggregate([
-      {
-        $lookup: {
-          from: 'stocks',
-          localField: 'stockId',
-          foreignField: '_id',
-          as: 'stock',
+    const sectors = await this.portfolioModel.aggregate<SectorAllocationResult>(
+      [
+        {
+          $lookup: {
+            from: 'stocks',
+            localField: 'stockId',
+            foreignField: '_id',
+            as: 'stock',
+          },
         },
-      },
-      {
-        $unwind: '$stock',
-      },
-      {
-        $group: {
-          _id: '$stock.sector',
-          sectorValue: {
-            $sum: {
-              $multiply: ['$quantity', '$stock.currentPrice'],
+        {
+          $unwind: '$stock',
+        },
+        {
+          $group: {
+            _id: '$stock.sector',
+            sectorValue: {
+              $sum: {
+                $multiply: ['$quantity', '$stock.currentPrice'],
+              },
             },
           },
         },
-      },
-    ]);
+      ],
+    );
 
     const totalValue = sectors.reduce(
       (sum, sector) => sum + sector.sectorValue,

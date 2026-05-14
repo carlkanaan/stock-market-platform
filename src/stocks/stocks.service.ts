@@ -17,6 +17,7 @@ import { EmailService } from '../notifications/email.service';
 import {
   PriceAlert,
   PriceAlertDocument,
+  AlertDirection,
 } from '../price-alerts/schemas/price-alert.schema';
 
 import { Member, MemberDocument } from '../members/schemas/member.schema';
@@ -108,9 +109,9 @@ export class StocksService {
 
     for (const alert of alerts) {
       const shouldTrigger =
-        (alert.direction === 'ABOVE' &&
+        (alert.direction === AlertDirection.ABOVE &&
           stock.currentPrice >= alert.targetPrice) ||
-        (alert.direction === 'BELOW' &&
+        (alert.direction === AlertDirection.BELOW &&
           stock.currentPrice <= alert.targetPrice);
 
       if (shouldTrigger) {
