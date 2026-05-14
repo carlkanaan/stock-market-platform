@@ -6,11 +6,15 @@ import { Model } from 'mongoose';
 import { CreateCmsUserDto } from './dto/create-cms-user.dto';
 import { CmsUser, CmsUserDocument } from './schemas/cms-user.schema';
 
+import { EmailService } from '../notifications/email.service';
+
 @Injectable()
 export class CmsUsersService {
   constructor(
     @InjectModel(CmsUser.name)
     private readonly cmsUserModel: Model<CmsUserDocument>,
+
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createCmsUserDto: CreateCmsUserDto) {
@@ -29,6 +33,12 @@ export class CmsUsersService {
       email: createCmsUserDto.email.toLowerCase(),
       password: hashedPassword,
     });
+
+    await this.emailService.sendCmsProvisioningEmail(
+      user.email,
+      user.fullName,
+      createCmsUserDto.password,
+    );
 
     return {
       success: true,

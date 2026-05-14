@@ -9,6 +9,8 @@ import { Model, Types } from 'mongoose';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { Wallet, WalletDocument } from './schemas/wallet.schema';
+import { EmailService } from '../notifications/email.service';
+import { Member, MemberDocument } from '../members/schemas/member.schema';
 
 import {
   WithdrawalRequest,
@@ -42,6 +44,10 @@ export class WalletService {
     private readonly walletTransactionModel: Model<WalletTransactionDocument>,
 
     private readonly auditLogsService: AuditLogsService,
+
+    @InjectModel(Member.name)
+    private readonly memberModel: Model<MemberDocument>,
+    private readonly emailService: EmailService,
   ) {}
   //deposit money in member wallet
   async deposit(depositDto: DepositDto) {
@@ -62,6 +68,16 @@ export class WalletService {
       transactionDate: new Date(),
     });
 
+    const member = await this.memberModel.findById(depositDto.memberId);
+
+    if (member) {
+      await this.emailService.sendWalletCreditEmail(
+        member.email,
+        depositDto.amount,
+        wallet.balance,
+      );
+    }
+
     return {
       success: true,
       message: 'Wallet credited successfully',
@@ -72,6 +88,7 @@ export class WalletService {
       },
     };
   }
+
   //perform withdrawal
   async withdraw(withdrawDto: WithdrawDto) {
     const wallet = await this.walletModel.findOne({

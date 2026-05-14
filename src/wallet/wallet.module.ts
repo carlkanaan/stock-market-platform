@@ -17,9 +17,13 @@ import {
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { JwtConfigModule } from '../common/jwt/jwt-config.module';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+import { Member, MemberSchema } from '../members/schemas/member.schema';
+
 @Module({
   imports: [
     JwtConfigModule,
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: Wallet.name, schema: WalletSchema },
       {
@@ -29,6 +33,10 @@ import { JwtConfigModule } from '../common/jwt/jwt-config.module';
       {
         name: WalletTransaction.name,
         schema: WalletTransactionSchema,
+      },
+      {
+        name: Member.name,
+        schema: MemberSchema,
       },
     ]),
     AuditLogsModule,

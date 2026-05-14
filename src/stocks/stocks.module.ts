@@ -8,13 +8,22 @@ import {
   PriceHistory,
   PriceHistorySchema,
 } from './schemas/price-history.schema';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { Member, MemberSchema } from '../members/schemas/member.schema';
+import {
+  PriceAlert,
+  PriceAlertSchema,
+} from '../price-alerts/schemas/price-alert.schema';
 
 @Module({
   imports: [
     JwtConfigModule,
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: Stock.name, schema: StockSchema },
       { name: PriceHistory.name, schema: PriceHistorySchema },
+      { name: PriceAlert.name, schema: PriceAlertSchema },
+      { name: Member.name, schema: MemberSchema },
     ]),
   ],
   controllers: [StocksController],
