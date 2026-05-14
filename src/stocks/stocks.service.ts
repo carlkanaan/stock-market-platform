@@ -13,6 +13,13 @@ import {
   PriceHistory,
   PriceHistoryDocument,
 } from './schemas/price-history.schema';
+import { EmailService } from '../notifications/email.service';
+import {
+  PriceAlert,
+  PriceAlertDocument,
+} from '../price-alerts/schemas/price-alert.schema';
+
+import { Member, MemberDocument } from '../members/schemas/member.schema';
 
 @Injectable()
 // Creates a stock listing and prevents duplicate tickers
@@ -23,6 +30,14 @@ export class StocksService {
 
     @InjectModel(PriceHistory.name)
     private readonly priceHistoryModel: Model<PriceHistoryDocument>,
+
+    @InjectModel(PriceAlert.name)
+    private readonly priceAlertModel: Model<PriceAlertDocument>,
+
+    @InjectModel(Member.name)
+    private readonly memberModel: Model<MemberDocument>,
+
+    private readonly emailService: EmailService,
   ) {}
 
   async create(createStockDto: CreateStockDto) {
@@ -86,6 +101,30 @@ export class StocksService {
         price: stock.currentPrice,
         recordedAt: new Date(),
       });
+    }
+    const alerts = await this.priceAlertModel.find({
+      stockId: stock._id,
+    });
+
+    for (const alert of alerts) {
+      const shouldTrigger =
+        (alert.direction === 'ABOVE' &&
+          stock.currentPrice >= alert.targetPrice) ||
+        (alert.direction === 'BELOW' &&
+          stock.currentPrice <= alert.targetPrice);
+
+      if (shouldTrigger) {
+        const member = await this.memberModel.findById(alert.memberId);
+
+        if (member) {
+          await this.emailService.sendPriceAlertEmail(
+            member.email,
+            stock.companyName,
+            stock.currentPrice,
+            alert.targetPrice,
+          );
+        }
+      }
     }
 
     return {

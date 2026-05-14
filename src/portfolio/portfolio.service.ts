@@ -17,6 +17,9 @@ import { Portfolio, PortfolioDocument } from './schemas/portfolio.schema';
 import { OrdersService } from '../orders/orders.service';
 import { OrderType } from '../orders/schemas/order.schema';
 
+import { EmailService } from '../notifications/email.service';
+import { Member, MemberDocument } from '../members/schemas/member.schema';
+
 @Injectable()
 // Processes stock purchases and updates portfolio positions
 export class PortfolioService {
@@ -24,11 +27,15 @@ export class PortfolioService {
     @InjectModel(Portfolio.name)
     private readonly portfolioModel: Model<PortfolioDocument>,
 
+    @InjectModel(Member.name)
+    private readonly memberModel: Model<MemberDocument>,
+
     private readonly walletService: WalletService,
     private readonly stocksService: StocksService,
     private readonly ordersService: OrdersService,
+    private readonly emailService: EmailService,
   ) {}
-
+  //Buy stocks
   async buyStock(buyStockDto: BuyStockDto) {
     const stock = await this.stocksService.findOne(buyStockDto.stockId);
 
@@ -51,10 +58,6 @@ export class PortfolioService {
       memberId: new Types.ObjectId(buyStockDto.memberId),
       stockId: new Types.ObjectId(buyStockDto.stockId),
     });
-    //prevent member from buying delisted stock
-    if (!stock.isListed) {
-      throw new BadRequestException('This stock is not available');
-    }
 
     if (!portfolioPosition) {
       portfolioPosition = await this.portfolioModel.create({
@@ -85,6 +88,17 @@ export class PortfolioService {
       quantity: buyStockDto.quantity,
       price: stock.currentPrice,
     });
+    const member = await this.memberModel.findById(buyStockDto.memberId);
+
+    if (member) {
+      await this.emailService.sendTradeExecutionEmail(
+        member.email,
+        'BUY',
+        buyStockDto.quantity,
+        stock.companyName,
+        totalCost,
+      );
+    }
 
     return {
       success: true,
@@ -95,6 +109,11 @@ export class PortfolioService {
 
   async sellStock(sellStockDto: SellStockDto) {
     const stock = await this.stocksService.findOne(sellStockDto.stockId);
+
+    //prevent member from buying delisted stock
+    if (!stock.isListed) {
+      throw new BadRequestException('This stock is not available');
+    }
 
     const portfolioPosition = await this.portfolioModel.findOne({
       memberId: new Types.ObjectId(sellStockDto.memberId),
@@ -139,6 +158,18 @@ export class PortfolioService {
       quantity: sellStockDto.quantity,
       price: stock.currentPrice,
     });
+
+    const member = await this.memberModel.findById(sellStockDto.memberId);
+
+    if (member) {
+      await this.emailService.sendTradeExecutionEmail(
+        member.email,
+        'SELL',
+        sellStockDto.quantity,
+        stock.companyName,
+        totalSaleValue,
+      );
+    }
 
     return {
       success: true,
