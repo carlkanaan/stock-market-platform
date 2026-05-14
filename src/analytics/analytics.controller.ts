@@ -6,24 +6,41 @@ import { AnalyticsService } from './analytics.service';
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
-  @Get('trading-volume')
+  @Get('volume')
   getTradingVolume(
-    @Query('stockId') stockId: string,
-    @Query('groupBy') groupBy: 'day' | 'month',
+    @Query('stock_id') stockId: string,
+    @Query('granularity') granularity: 'day' | 'month',
     @Query('from') from: string,
     @Query('to') to: string,
   ) {
-    return this.analyticsService.getTradingVolume(stockId, groupBy, from, to);
+    return this.analyticsService.getTradingVolume(
+      stockId,
+      granularity,
+      from,
+      to,
+    );
   }
 
-  @Get('top-stocks')
-  getTopTradedStocks() {
-    return this.analyticsService.getTopTradedStocks();
+  @Get('stocks/top')
+  getTopTradedStocks(
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.analyticsService.getTopTradedStocks(
+      Number(limit) || 5,
+      Number(page) || 1,
+    );
   }
 
-  @Get('active-members')
-  getMostActiveMembers() {
-    return this.analyticsService.getMostActiveMembers();
+  @Get('members/active')
+  getMostActiveMembers(
+    @Query('days') days?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.analyticsService.getMostActiveMembers(
+      Number(days) || 30,
+      Number(limit) || 10,
+    );
   }
 
   @Get('aum')
