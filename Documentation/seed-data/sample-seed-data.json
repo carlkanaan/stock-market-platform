@@ -1,0 +1,201 @@
+{
+  "cmsUsers": [
+    {
+      "fullName": "Omar Halabi",
+      "email": "omar.admin@demo.com",
+      "role": "ADMIN",
+      "isActive": true
+    },
+    {
+      "fullName": "Leila Khoury",
+      "email": "leila.analyst@demo.com",
+      "role": "ANALYST",
+      "isActive": true
+    },
+    {
+      "fullName": "Elie Bitar",
+      "email": "elieb.support@gmail.com",
+      "role": "SUPPORT_AGENT",
+      "isActive": true
+    },
+    {
+      "fullName": "Carl Kanaan",
+      "email": "ckanaan02@gmail.com",
+      "role": "SUPPORT_AGENT",
+      "isActive": true
+    }
+  ],
+  "members": [
+    {
+      "fullName": "Adam Obeid",
+      "email": "adamo.investor@gmail.com",
+      "nationalIdNumber": "961961961",
+      "isEmailVerified": true,
+      "isIdentityVerified": true,
+      "isActive": true
+    },
+    {
+      "fullName": "Carl Kanaan",
+      "email": "ckanaan02@gmail.com",
+      "nationalIdNumber": "961961912",
+      "isEmailVerified": true,
+      "isIdentityVerified": true,
+      "isActive": true
+    }
+  ],
+  "stocks": [
+    {
+      "ticker": "AAPL",
+      "companyName": "Apple Inc.",
+      "sector": "Technology",
+      "currentPrice": 190,
+      "isListed": true
+    },
+    {
+      "ticker": "MSFT",
+      "companyName": "Microsoft Corporation",
+      "sector": "Technology",
+      "currentPrice": 425,
+      "isListed": true
+    },
+    {
+      "ticker": "SBUX",
+      "companyName": "Starbucks Corporation",
+      "sector": "Consumer Discretionary",
+      "currentPrice": 88,
+      "isListed": true
+    },
+    {
+      "ticker": "NVDA",
+      "companyName": "NVIDIA Corporation",
+      "sector": "Technology",
+      "currentPrice": 870,
+      "isListed": true
+    },
+    {
+      "ticker": "AMZN",
+      "companyName": "Amazon.com Inc.",
+      "sector": "Consumer Discretionary",
+      "currentPrice": 182,
+      "isListed": true
+    },
+    {
+      "ticker": "JNJ",
+      "companyName": "Johnson & Johnson",
+      "sector": "Healthcare",
+      "currentPrice": 152,
+      "isListed": true
+    }
+  ],
+  "wallets": [
+    {
+      "member": "Adam Obeid",
+      "balance": 50000
+    },
+    {
+      "member": "Carl Kanaan",
+      "balance": 15000
+    }
+  ],
+  "priceAlerts": [
+    {
+      "member": "Carl Kanaan",
+      "stock": "SBUX",
+      "targetPrice": 120,
+      "direction": "ABOVE"
+    },
+    {
+      "member": "Adam Obeid",
+      "stock": "AAPL",
+      "targetPrice": 170,
+      "direction": "BELOW"
+    }
+  ],
+  "orders": [
+    {
+      "member": "Carl Kanaan",
+      "stock": "AAPL",
+      "type": "BUY",
+      "quantity": 2,
+      "price": 190,
+      "totalValue": 380
+    },
+    {
+      "member": "Carl Kanaan",
+      "stock": "SBUX",
+      "type": "SELL",
+      "quantity": 3,
+      "price": 88,
+      "totalValue": 264
+    },
+    {
+      "member": "Adam Obeid",
+      "stock": "JNJ",
+      "type": "BUY",
+      "quantity": 10,
+      "price": 152,
+      "totalValue": 1520
+    }
+  ],
+  "portfolios": [
+    {
+      "member": "Carl Kanaan",
+      "stock": "AAPL",
+      "quantity": 6,
+      "averagePurchasePrice": 187.5
+    },
+    {
+      "member": "Adam Obeid",
+      "stock": "JNJ",
+      "quantity": 5,
+      "averagePurchasePrice": 160
+    }
+  ],
+  "walletTransactions": [
+    {
+      "member": "Carl Kanaan",
+      "type": "DEPOSIT",
+      "amount": 15000,
+      "status": "COMPLETED"
+    },
+    {
+      "member": "Adam Obeid",
+      "type": "DEPOSIT",
+      "amount": 50000,
+      "status": "COMPLETED"
+    }
+  ],
+  "withdrawalRequests": [
+    {
+      "member": "Carl Kanaan",
+      "amount": 500,
+      "status": "PENDING"
+    }
+  ],
+  "systemAlerts": [
+    {
+      "type": "NEGATIVE_WALLET",
+      "message": "Negative wallet balance detected for Carl Kanaan with id number (...)",
+      "isActive": true
+    }
+  ],
+  "auditLogs": [
+    {
+      "action": "SUSPEND_MEMBER",
+      "member": "Adam Obeid",
+      "reason": "Suspicious account activity"
+    }
+  ],
+  "priceHistory": [
+    {
+      "stock": "AAPL",
+      "price": 185,
+      "recordedAt": "2026-05-01"
+    },
+    {
+      "stock": "AAPL",
+      "price": 190,
+      "recordedAt": "2026-05-10"
+    }
+  ]
+}

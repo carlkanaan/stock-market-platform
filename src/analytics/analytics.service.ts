@@ -89,7 +89,9 @@ export class AnalyticsService {
     };
   }
   //Top 5 Traded Stocks
-  async getTopTradedStocks() {
+  async getTopTradedStocks(limit = 5, page = 1) {
+    const skip = (page - 1) * limit;
+
     const result = await this.orderModel.aggregate([
       {
         $group: {
@@ -113,6 +115,7 @@ export class AnalyticsService {
         $project: {
           _id: 0,
           stockId: '$_id',
+          ticker: '$stock.ticker',
           companyName: '$stock.companyName',
           tradeCount: 1,
           totalVolume: 1,
@@ -124,45 +127,66 @@ export class AnalyticsService {
         },
       },
       {
-        $limit: 5,
+        $skip: skip,
+      },
+      {
+        $limit: limit,
       },
     ]);
 
     return {
       success: true,
+      page,
+      limit,
       data: result,
     };
   }
   //most active members in the past 30 days
-  async getMostActiveMembers() {
-    const thirtyDaysAgo = new Date();
+  async getMostActiveMembers(days = 30, limit = 10) {
+    const startDate = new Date();
 
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    startDate.setDate(startDate.getDate() - days);
 
     const result = await this.orderModel.aggregate([
       {
         $match: {
           executedAt: {
-            $gte: thirtyDaysAgo,
+            $gte: startDate,
           },
         },
       },
       {
         $group: {
           _id: '$memberId',
-          totalOrders: { $sum: 1 },
-          totalTradingValue: {
-            $sum: '$totalValue',
-          },
+          tradeCount: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: 'members',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'member',
+        },
+      },
+      {
+        $unwind: '$member',
+      },
+      {
+        $project: {
+          _id: 0,
+          memberId: '$member._id',
+          displayName: '$member.fullName',
+          tradeCount: 1,
         },
       },
       {
         $sort: {
-          totalOrders: -1,
+          tradeCount: -1,
         },
       },
       {
-        $limit: 5,
+        $limit: limit,
       },
     ]);
 
