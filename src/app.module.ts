@@ -17,7 +17,10 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { PriceAlertsModule } from './price-alerts/price-alerts.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SystemAlertsModule } from './system-alerts/system-alerts.module';
-import * as Joi from 'joi';
+import * as Joi from 'joi'; //implemented Joi to validate configuration values and request schemas.
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -29,6 +32,8 @@ import * as Joi from 'joi';
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRES_IN: Joi.string().default('1d'),
         OTP_TTL_MINUTES: Joi.number().default(10),
+        THROTTLE_TTL_SECONDS: Joi.number().default(60),
+        THROTTLE_LIMIT: Joi.number().default(10),
       }),
     }),
 
@@ -36,6 +41,18 @@ import * as Joi from 'joi';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI'),
+      }),
+    }),
+
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: configService.get<number>('THROTTLE_TTL_SECONDS') ?? 60,
+            limit: configService.get<number>('THROTTLE_LIMIT') ?? 10,
+          },
+        ],
       }),
     }),
 
@@ -54,6 +71,12 @@ import * as Joi from 'joi';
     SystemAlertsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
