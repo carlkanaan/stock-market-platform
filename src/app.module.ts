@@ -20,7 +20,8 @@ import { SystemAlertsModule } from './system-alerts/system-alerts.module';
 import * as Joi from 'joi'; //implemented Joi to validate configuration values and request schemas.
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler'; //throttlerguward implemented for rate limiting
+import { RedisCacheModule } from './cache/redis-cache.module'; //redis caching
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     PriceAlertsModule,
     ScheduleModule.forRoot(),
     SystemAlertsModule,
+    RedisCacheModule,
   ],
   controllers: [AppController],
   providers: [

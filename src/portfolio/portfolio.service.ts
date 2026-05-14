@@ -20,6 +20,8 @@ import { OrderType } from '../orders/schemas/order.schema';
 import { EmailService } from '../notifications/email.service';
 import { Member, MemberDocument } from '../members/schemas/member.schema';
 
+import { RedisCacheService } from '../cache/redis-cache.service';
+
 @Injectable()
 // Processes stock purchases and updates portfolio positions
 export class PortfolioService {
@@ -34,6 +36,7 @@ export class PortfolioService {
     private readonly stocksService: StocksService,
     private readonly ordersService: OrdersService,
     private readonly emailService: EmailService,
+    private readonly redisCacheService: RedisCacheService,
   ) {}
   //Buy stocks
   async buyStock(buyStockDto: BuyStockDto) {
@@ -88,6 +91,8 @@ export class PortfolioService {
       quantity: buyStockDto.quantity,
       price: stock.currentPrice,
     });
+    // Evict cached portfolio after trade execution to keep data fresh
+    await this.redisCacheService.del(`portfolio:${buyStockDto.memberId}`);
     const member = await this.memberModel.findById(buyStockDto.memberId);
 
     if (member) {
@@ -158,7 +163,8 @@ export class PortfolioService {
       quantity: sellStockDto.quantity,
       price: stock.currentPrice,
     });
-
+    // Evict cached portfolio after trade execution to keep data fresh
+    await this.redisCacheService.del(`portfolio:${sellStockDto.memberId}`);
     const member = await this.memberModel.findById(sellStockDto.memberId);
 
     if (member) {
@@ -181,13 +187,26 @@ export class PortfolioService {
       },
     };
   }
-
+  // Cache member portfolio summaries by member ID
   async getPortfolio(memberId: string) {
+    const cacheKey = `portfolio:${memberId}`;
+
+    const cachedPortfolio = await this.redisCacheService.get(cacheKey);
+
+    if (cachedPortfolio) {
+      return {
+        success: true,
+        data: cachedPortfolio,
+      };
+    }
+
     const portfolio = await this.portfolioModel
       .find({
         memberId: new Types.ObjectId(memberId),
       })
       .populate('stockId');
+
+    await this.redisCacheService.set(cacheKey, portfolio);
 
     return {
       success: true,
