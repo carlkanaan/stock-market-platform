@@ -14,6 +14,7 @@ import {
   PriceHistoryDocument,
 } from './schemas/price-history.schema';
 import { EmailService } from '../notifications/email.service';
+
 import {
   PriceAlert,
   PriceAlertDocument,
@@ -21,6 +22,7 @@ import {
 } from '../price-alerts/schemas/price-alert.schema';
 
 import { Member, MemberDocument } from '../members/schemas/member.schema';
+import { RedisCacheService } from '../cache/redis-cache.service';
 
 @Injectable()
 // Creates a stock listing and prevents duplicate tickers
@@ -39,6 +41,8 @@ export class StocksService {
     private readonly memberModel: Model<MemberDocument>,
 
     private readonly emailService: EmailService,
+
+    private readonly redisCacheService: RedisCacheService,
   ) {}
 
   async create(createStockDto: CreateStockDto) {
@@ -55,15 +59,30 @@ export class StocksService {
       ticker: createStockDto.ticker.toUpperCase(),
     });
 
+    await this.redisCacheService.del('stocks:catalogue');
+
     return {
       success: true,
       message: 'Stock created successfully',
       data: stock,
     };
   }
-
+  // cache stock catalogue listings to reduce repeated database queries
   async findAll() {
+    const cacheKey = 'stocks:catalogue';
+
+    const cachedStocks = await this.redisCacheService.get(cacheKey);
+
+    if (cachedStocks) {
+      return {
+        success: true,
+        data: cachedStocks,
+      };
+    }
+
     const stocks = await this.stockModel.find().sort({ ticker: 1 });
+
+    await this.redisCacheService.set(cacheKey, stocks);
 
     return {
       success: true,
@@ -80,7 +99,7 @@ export class StocksService {
 
     return stock;
   }
-
+  // invalidate cached stock data after price updates
   async update(id: string, updateStockDto: UpdateStockDto) {
     const stock = await this.stockModel.findById(id);
 
@@ -95,6 +114,9 @@ export class StocksService {
     Object.assign(stock, updateStockDto);
 
     await stock.save();
+
+    await this.redisCacheService.del('stocks:catalogue');
+    await this.redisCacheService.del(`stocks:price:${stock._id.toString()}`);
 
     if (priceChanged) {
       await this.priceHistoryModel.create({
@@ -134,7 +156,7 @@ export class StocksService {
       data: stock,
     };
   }
-
+  // remove stale stock cache after delisting
   async delist(id: string) {
     const stock = await this.stockModel.findById(id);
 
@@ -144,6 +166,9 @@ export class StocksService {
 
     stock.isListed = false;
     await stock.save();
+
+    await this.redisCacheService.del('stocks:catalogue');
+    await this.redisCacheService.del(`stocks:price:${stock._id.toString()}`);
 
     return {
       success: true,
