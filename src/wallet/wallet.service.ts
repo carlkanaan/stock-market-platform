@@ -31,6 +31,10 @@ import {
 
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
+import { StripeDepositDto } from './dto/stripe-deposit.dto';
+
 @Injectable()
 export class WalletService {
   constructor(
@@ -48,6 +52,8 @@ export class WalletService {
     @InjectModel(Member.name)
     private readonly memberModel: Model<MemberDocument>,
     private readonly emailService: EmailService,
+
+    private readonly configService: ConfigService,
   ) {}
   //deposit money in member wallet
   async deposit(depositDto: DepositDto) {
@@ -238,6 +244,7 @@ export class WalletService {
       data: transactions,
     };
   }
+
   //admin manual credit/debit adjustments
   async manualAdjustment(dto: ManualWalletAdjustmentDto) {
     const wallet = await this.walletModel.findOne({
@@ -277,6 +284,95 @@ export class WalletService {
         reason: dto.reason,
         balance: wallet.balance,
       },
+    };
+  }
+  //stripe payment gateaway
+  //strip checkout session creation for deposits
+  async createStripeCheckoutSession(dto: StripeDepositDto) {
+    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+
+    if (!stripeSecretKey) {
+      throw new BadRequestException('Stripe secret key is missing');
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Wallet Deposit',
+            },
+            unit_amount: dto.amount * 100,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        memberId: dto.memberId,
+        amount: dto.amount.toString(),
+      },
+      success_url:
+        this.configService.get<string>('STRIPE_SUCCESS_URL') ??
+        'http://localhost:3000/success',
+      cancel_url:
+        this.configService.get<string>('STRIPE_CANCEL_URL') ??
+        'http://localhost:3000/cancel',
+    });
+
+    return {
+      success: true,
+      message: 'Stripe checkout session created',
+      data: {
+        url: session.url,
+      },
+    };
+  }
+  //webhooks
+  async handleStripeWebhook(payload: Buffer, signature: string) {
+    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
+
+    if (!stripeSecretKey || !webhookSecret) {
+      throw new BadRequestException('Stripe configuration missing');
+    }
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    });
+
+    //stripe webhook signature verification before processing payment events
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    } catch {
+      throw new BadRequestException('Invalid Stripe webhook signature');
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const memberId = session.metadata?.memberId;
+      const amount = Number(session.metadata?.amount);
+
+      if (!memberId || !amount) {
+        throw new BadRequestException('Missing Stripe metadata');
+      }
+
+      const walletResponse = await this.getWallet(memberId);
+      const wallet = walletResponse.data;
+      wallet.balance += amount; //credit member wallet only after strip successfull payment
+      await wallet.save();
+    }
+    return {
+      received: true,
     };
   }
 }

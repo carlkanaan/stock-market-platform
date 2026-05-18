@@ -10,7 +10,9 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
