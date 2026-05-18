@@ -16,6 +16,10 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../types/user-role.enum';
+import { StripeDepositDto } from './dto/stripe-deposit.dto';
+import { Req, Headers } from '@nestjs/common';
+import type { Request } from 'express';
+import { Public } from '../common/decorators/public.decorator';
 
 @Controller('wallet')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -70,5 +74,19 @@ export class WalletController {
   @Roles(UserRole.ADMIN, UserRole.SUPPORT_AGENT)
   getWalletTransactions(@Param('memberId') memberId: string) {
     return this.walletService.getWalletTransactions(memberId);
+  }
+
+  @Post('stripe/checkout')
+  createStripeCheckoutSession(@Body() stripeDepositDto: StripeDepositDto) {
+    return this.walletService.createStripeCheckoutSession(stripeDepositDto);
+  }
+
+  @Public()
+  @Post('stripe/webhook')
+  handleStripeWebhook(
+    @Req() request: Request & { rawBody: Buffer },
+    @Headers('stripe-signature') signature: string,
+  ) {
+    return this.walletService.handleStripeWebhook(request.rawBody, signature);
   }
 }
