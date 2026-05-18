@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Cache } from 'cache-manager';
 
 @Injectable()
-// Centralized Redis cache helper service'
+// centralized Redis cache helper service'
 export class RedisCacheService {
   constructor(
     @Inject(CACHE_MANAGER)

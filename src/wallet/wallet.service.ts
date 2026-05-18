@@ -34,6 +34,7 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { StripeDepositDto } from './dto/stripe-deposit.dto';
+import { NotificationEventsService } from '../events/notification-events.service';
 
 @Injectable()
 export class WalletService {
@@ -54,6 +55,8 @@ export class WalletService {
     private readonly emailService: EmailService,
 
     private readonly configService: ConfigService,
+
+    private readonly notificationEventsService: NotificationEventsService,
   ) {}
   //deposit money in member wallet
   async deposit(depositDto: DepositDto) {
@@ -83,6 +86,12 @@ export class WalletService {
         wallet.balance,
       );
     }
+
+    await this.notificationEventsService.emitWalletCreditedEvent({
+      memberId: depositDto.memberId,
+      amount: depositDto.amount,
+      balance: wallet.balance,
+    });
 
     return {
       success: true,
@@ -349,7 +358,7 @@ export class WalletService {
       apiVersion: '2023-10-16',
     });
 
-    //stripe webhook signature verification before processing payment events
+    // Stripe webhook signature verification before processing payment events
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
@@ -365,12 +374,23 @@ export class WalletService {
       if (!memberId || !amount) {
         throw new BadRequestException('Missing Stripe metadata');
       }
-
       const walletResponse = await this.getWallet(memberId);
       const wallet = walletResponse.data;
-      wallet.balance += amount; //credit member wallet only after strip successfull payment
+
+      // Credit member wallet only after successful Stripe payment
+      wallet.balance += amount;
       await wallet.save();
+      try {
+        this.notificationEventsService.emitWalletCreditedEvent({
+          memberId,
+          amount,
+          balance: wallet.balance,
+        });
+      } catch {
+        // Do not block Stripe wallet credit if event publishing fails
+      }
     }
+
     return {
       received: true,
     };

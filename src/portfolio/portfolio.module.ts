@@ -10,6 +10,7 @@ import { StocksModule } from '../stocks/stocks.module';
 import { OrdersModule } from '../orders/orders.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Member, MemberSchema } from '../members/schemas/member.schema';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { Member, MemberSchema } from '../members/schemas/member.schema';
     StocksModule,
     OrdersModule,
     NotificationsModule,
+    EventsModule,
     MongooseModule.forFeature([
       { name: Portfolio.name, schema: PortfolioSchema },
       { name: Member.name, schema: MemberSchema },

@@ -24,6 +24,8 @@ import {
 import { Member, MemberDocument } from '../members/schemas/member.schema';
 import { RedisCacheService } from '../cache/redis-cache.service';
 
+import { NotificationEventsService } from '../events/notification-events.service';
+
 @Injectable()
 // Creates a stock listing and prevents duplicate tickers
 export class StocksService {
@@ -43,6 +45,8 @@ export class StocksService {
     private readonly emailService: EmailService,
 
     private readonly redisCacheService: RedisCacheService,
+
+    private readonly notificationEventsService: NotificationEventsService,
   ) {}
 
   async create(createStockDto: CreateStockDto) {
@@ -146,6 +150,13 @@ export class StocksService {
             stock.currentPrice,
             alert.targetPrice,
           );
+
+          this.notificationEventsService.emitPriceAlertTriggeredEvent({
+            memberId: member._id,
+            stockId: stock._id,
+            currentPrice: stock.currentPrice,
+            targetPrice: alert.targetPrice,
+          });
         }
       }
     }

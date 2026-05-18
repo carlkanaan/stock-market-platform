@@ -19,6 +19,7 @@ import { JwtConfigModule } from '../common/jwt/jwt-config.module';
 
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Member, MemberSchema } from '../members/schemas/member.schema';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { Member, MemberSchema } from '../members/schemas/member.schema';
       },
     ]),
     AuditLogsModule,
+    EventsModule,
   ],
   controllers: [WalletController],
   providers: [WalletService],

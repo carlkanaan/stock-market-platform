@@ -15,10 +15,13 @@ import {
   PriceAlertSchema,
 } from '../price-alerts/schemas/price-alert.schema';
 
+import { EventsModule } from '../events/events.module';
+
 @Module({
   imports: [
     JwtConfigModule,
     NotificationsModule,
+    EventsModule,
     MongooseModule.forFeature([
       { name: Stock.name, schema: StockSchema },
       { name: PriceHistory.name, schema: PriceHistorySchema },
