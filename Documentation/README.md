@@ -5,7 +5,7 @@ launch the server using npm run start and open another terminal and type "stripe
 Example of successful webhook delivery by crediting 150$ to a member's wallet:
 (base) carlkanaan@Carls-MacBook-Pro stock-market-platform % stripe listen --forward-to localhost:3000/wallet/stripe/webhook
 
-> Ready! You are using Stripe API Version [2026-04-22.dahlia]. Your webhook signing secret is whsec_e7ff7e50802907bc5fc3ceb6aac3e793369f709a36cd68bb90b223ece3d88ada (^C to quit)
+> Ready! You are using Stripe API Version [2026-04-22.dahlia]. Your webhook signing secret is xxxxxxxxxxxxxxxxxxxx (^C to quit)
 > 2026-05-18 11:29:09 --> payment_intent.created [evt_3TYMXvRm5OgEoZxq10D24Vhj]
 > 2026-05-18 11:29:09 <-- [201] POST http://localhost:3000/wallet/stripe/webhook [evt_3TYMXvRm5OgEoZxq10D24Vhj]
 > 2026-05-18 11:29:09 <-- [201] POST http://localhost:3000/wallet/stripe/webhook [evt_1TYMXwRm5OgEoZxqs4aIQbkZ]
