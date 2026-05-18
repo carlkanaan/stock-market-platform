@@ -22,6 +22,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler'; //throttlerguward implemented for rate limiting
 import { RedisCacheModule } from './cache/redis-cache.module'; //redis caching
+import { EventsModule } from './events/events.module'; //notification event module
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { RedisCacheModule } from './cache/redis-cache.module'; //redis caching
     ScheduleModule.forRoot(),
     SystemAlertsModule,
     RedisCacheModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [

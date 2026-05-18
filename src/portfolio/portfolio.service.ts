@@ -21,6 +21,7 @@ import { EmailService } from '../notifications/email.service';
 import { Member, MemberDocument } from '../members/schemas/member.schema';
 
 import { RedisCacheService } from '../cache/redis-cache.service';
+import { NotificationEventsService } from '../events/notification-events.service';
 
 @Injectable()
 // Processes stock purchases and updates portfolio positions
@@ -37,6 +38,7 @@ export class PortfolioService {
     private readonly ordersService: OrdersService,
     private readonly emailService: EmailService,
     private readonly redisCacheService: RedisCacheService,
+    private readonly notificationEventsService: NotificationEventsService,
   ) {}
   //Buy stocks
   async buyStock(buyStockDto: BuyStockDto) {
@@ -104,6 +106,14 @@ export class PortfolioService {
         totalCost,
       );
     }
+
+    this.notificationEventsService.emitTradeExecutedEvent({
+      type: 'BUY',
+      memberId: buyStockDto.memberId,
+      stockId: buyStockDto.stockId,
+      quantity: buyStockDto.quantity,
+      totalValue: totalCost,
+    });
 
     return {
       success: true,
@@ -176,6 +186,14 @@ export class PortfolioService {
         totalSaleValue,
       );
     }
+
+    this.notificationEventsService.emitTradeExecutedEvent({
+      type: 'SELL',
+      memberId: sellStockDto.memberId,
+      stockId: sellStockDto.stockId,
+      quantity: sellStockDto.quantity,
+      totalValue: totalSaleValue,
+    });
 
     return {
       success: true,
