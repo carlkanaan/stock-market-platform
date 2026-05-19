@@ -12,7 +12,7 @@ export class PriceAlertsService {
     @InjectModel(PriceAlert.name)
     private readonly priceAlertModel: Model<PriceAlertDocument>,
   ) {}
-
+  //price alert creation
   async create(createPriceAlertDto: CreatePriceAlertDto) {
     const alert = await this.priceAlertModel.create({
       memberId: new Types.ObjectId(createPriceAlertDto.memberId),
@@ -27,7 +27,7 @@ export class PriceAlertsService {
       data: alert,
     };
   }
-
+  //displpay member alerts
   async findMemberAlerts(memberId: string) {
     const alerts = await this.priceAlertModel
       .find({

@@ -173,7 +173,7 @@ export class PortfolioService {
       quantity: sellStockDto.quantity,
       price: stock.currentPrice,
     });
-    // Evict cached portfolio after trade execution to keep data fresh
+    // invalidate cached portfolio after trade execution to keep data fresh
     await this.redisCacheService.del(`portfolio:${sellStockDto.memberId}`);
     const member = await this.memberModel.findById(sellStockDto.memberId);
 

@@ -17,6 +17,7 @@ export class CmsUsersService {
     private readonly emailService: EmailService,
   ) {}
 
+  //cms user creation
   async create(createCmsUserDto: CreateCmsUserDto) {
     const existingUser = await this.cmsUserModel.findOne({
       email: createCmsUserDto.email.toLowerCase(),

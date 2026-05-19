@@ -47,6 +47,7 @@ export class AnalyticsService {
     private readonly withdrawalRequestModel: Model<WithdrawalRequestDocument>,
   ) {}
 
+  //trading volume display
   async getTradingVolume(
     stockId: string,
     groupBy: 'day' | 'month',
@@ -258,7 +259,7 @@ export class AnalyticsService {
       },
     };
   }
-
+  //display secotr allocation
   async getSectorAllocation() {
     const sectors = await this.portfolioModel.aggregate<SectorAllocationResult>(
       [

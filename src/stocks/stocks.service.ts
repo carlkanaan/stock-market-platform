@@ -187,7 +187,7 @@ export class StocksService {
       data: stock,
     };
   }
-
+  //display stock price history
   async getPriceHistory(id: string) {
     const history = await this.priceHistoryModel
       .find({ stockId: new Types.ObjectId(id) })

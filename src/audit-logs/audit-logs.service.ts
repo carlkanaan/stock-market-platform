@@ -10,7 +10,7 @@ export class AuditLogsService {
     @InjectModel(AuditLog.name)
     private readonly auditLogModel: Model<AuditLogDocument>,
   ) {}
-
+  //audit logs creation
   async createLog(data: {
     action: string;
     performedBy?: string;

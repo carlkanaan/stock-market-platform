@@ -87,7 +87,7 @@ export class WalletService {
       );
     }
 
-    await this.notificationEventsService.emitWalletCreditedEvent({
+    this.notificationEventsService.emitWalletCreditedEvent({
       memberId: depositDto.memberId,
       amount: depositDto.amount,
       balance: wallet.balance,
@@ -104,7 +104,7 @@ export class WalletService {
     };
   }
 
-  //perform withdrawal
+  // withdrawal money from member wallet
   async withdraw(withdrawDto: WithdrawDto) {
     const wallet = await this.walletModel.findOne({
       memberId: new Types.ObjectId(withdrawDto.memberId),
@@ -141,7 +141,7 @@ export class WalletService {
       data: request,
     };
   }
-  //approve withdrawals
+  //approve member withdrawals
   async approveWithdrawal(requestId: string) {
     const request = await this.withdrawalRequestModel.findById(requestId);
 
@@ -192,7 +192,7 @@ export class WalletService {
       },
     };
   }
-  //reject withdrawal
+  //reject member withdrawal
   async rejectWithdrawal(requestId: string, reason: string) {
     const request = await this.withdrawalRequestModel.findById(requestId);
 
@@ -227,7 +227,7 @@ export class WalletService {
       data: requests,
     };
   }
-  //display wallet
+  //display member wallet
   async getWallet(memberId: string) {
     const wallet = await this.walletModel.findOne({
       memberId: new Types.ObjectId(memberId),

@@ -48,7 +48,7 @@ export class SystemAlertsService {
       });
     }
   }
-
+  //display alerts
   async getAlerts() {
     const alerts = await this.systemAlertModel
       .find({ isActive: true })

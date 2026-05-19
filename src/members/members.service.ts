@@ -24,7 +24,7 @@ import { MemberLoginDto } from './dto/member-login.dto';
 
 @Injectable()
 
-// Registers a member and creates a temporary OTP for email verification
+// Registers a member with age restriction (18 years old) and creates a temporary OTP for email verification
 export class MembersService {
   constructor(
     @InjectModel(Member.name)
@@ -66,7 +66,7 @@ export class MembersService {
       otpCode,
       otpExpiresAt,
     });
-
+    //OTP creation and sending to member by email (Sendgrid)
     await this.emailService.sendOtpEmail(member.email, otpCode);
 
     return {
@@ -81,7 +81,7 @@ export class MembersService {
       },
     };
   }
-
+  //OTP verification
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const member = await this.memberModel.findOne({
       email: verifyOtpDto.email.toLowerCase(),
@@ -124,7 +124,7 @@ export class MembersService {
       },
     };
   }
-
+  //Password setup
   async setPassword(setPasswordDto: SetPasswordDto) {
     const member = await this.memberModel.findOne({
       email: setPasswordDto.email.toLowerCase(),
@@ -149,6 +149,8 @@ export class MembersService {
       message: 'Password set successfully',
     };
   }
+
+  //Login member
   async login(memberLoginDto: MemberLoginDto) {
     const member = await this.memberModel.findOne({
       email: memberLoginDto.email.toLowerCase(),
@@ -186,6 +188,8 @@ export class MembersService {
       },
     };
   }
+
+  //identity approval (audit logs)
   async approveIdentity(memberId: string, adminId?: string) {
     const member = await this.memberModel.findById(memberId);
 
@@ -215,6 +219,7 @@ export class MembersService {
     };
   }
 
+  //identity rejection
   async rejectIdentity(memberId: string, reason: string, adminId?: string) {
     const member = await this.memberModel.findById(memberId);
 
@@ -244,7 +249,7 @@ export class MembersService {
       },
     };
   }
-
+  //Suspend member account
   async suspendMember(memberId: string, reason: string, adminId?: string) {
     const member = await this.memberModel.findById(memberId);
 
@@ -275,7 +280,7 @@ export class MembersService {
       },
     };
   }
-
+  //Reinstate member account
   async reinstateMember(memberId: string, adminId?: string) {
     const member = await this.memberModel.findById(memberId);
 
@@ -305,7 +310,7 @@ export class MembersService {
       },
     };
   }
-
+  //function to calculate age from birth date for age restriction
   private calculateAge(dateOfBirth: Date) {
     const today = new Date();
     let age = today.getFullYear() - dateOfBirth.getFullYear();
